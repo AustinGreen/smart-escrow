@@ -30,20 +30,22 @@ contract SmartEscrow {
     // the mainnet AAVE v2 lending pool
     LendingPool pool = LendingPool(0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9);
 
-    // aave interest bearing DAI
-    ERC20 aDai = ERC20(0x028171bCA77440897B824Ca71D1c56caC55b68A3);
+    // aave interest bearing erc20
+    ERC20 public immutable aToken;
 
     /// @notice Creates a new Escrow that generates yield on locked assets.
     /// @param _beneficiary The user receiving assets after timelock.
     constructor(
         address _beneficiary,
         ERC20 _asset,
+        ERC20 _aToken,
         uint256 _amount
     ) {
         depositor = msg.sender;
         beneficiary = _beneficiary;
         vestingDate = block.timestamp + 30 days;
         asset = _asset;
+        aToken = _aToken;
         amount = _amount;
 
         asset.transferFrom(depositor, address(this), _amount);
@@ -56,6 +58,10 @@ contract SmartEscrow {
         require(msg.sender == beneficiary);
         require(block.timestamp > vestingDate);
         pool.withdraw(address(asset), amount, beneficiary);
-        pool.withdraw(address(asset), aDai.balanceOf(address(this)), depositor);
+        pool.withdraw(
+            address(asset),
+            aToken.balanceOf(address(this)),
+            depositor
+        );
     }
 }
